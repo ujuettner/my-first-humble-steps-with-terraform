@@ -1,4 +1,4 @@
 region  = "ca-central-1"
-profile = "STAGE"
+profile = "STAGING"
 vpc_id  = "vpc-fca02fXX"
-count   = 2
+count   = 5

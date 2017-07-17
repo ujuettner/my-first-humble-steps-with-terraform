@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests"""
+"""Test suite for Terraform resources."""
 
 import os
 import unittest
@@ -18,10 +18,20 @@ class TestResources(unittest.TestCase):
 
     def test_tags(self):
         """Checks resources for required tags."""
-        tagged_resources = ['aws_ebs_volume', 'aws_instance']
+        tagged_resources = [
+            'aws_security_group', 'aws_ebs_volume', 'aws_instance'
+        ]
         required_tags = ['Name']
+        self.validator.error_if_property_missing()
         self.validator.resources(tagged_resources).property('tags'). \
             should_have_properties(required_tags)
+
+    def test_sg_for_ssh(self):
+        """Checks SGs for open SSH access."""
+        self.validator.resources(['aws_security_group']).property('ingress'). \
+            property('from_port').should_equal(22)
+        self.validator.resources(['aws_security_group']).property('ingress'). \
+            property('to_port').should_equal(22)
 
     def test_ebs_block_device(self):
         """Checks instances for NOT having a EBS block device directly
@@ -31,23 +41,18 @@ class TestResources(unittest.TestCase):
 
     def test_ebs_volume_encryption(self):
         """Checks EBS volume for enabled encryption."""
+        self.validator.error_if_property_missing()
         self.validator.resources(['aws_ebs_volume']).property('encrypted'). \
             should_equal(True)
 
-    def test_latest_ami(self):
-        """Checks for usage of latest AMI."""
-        pass
-
-    def test_different_azs(self):
-        """Checks whether the instances are placed in at least 2 different
-           AZs."""
-        actual_property_value = self.validator.resources(['aws_instance']).property('subnet_id').properties
-        print(type(actual_property_value))
-        print(dir(actual_property_value))
-        print(actual_property_value)
-        print(actual_property_value[0].property_value)
-        pass
-        #self.validator.resources(['aws_instance']).property('subnet_id').list_should_contain(['subnet-a534a2cc', 'subnet-b1e74cca'])
+    def test_number_of_instances_and_volumes(self):
+        """Checks the number of instances and EBS volumes against the default
+           value."""
+        self.validator.enable_variable_expansion()
+        self.validator.resources(['aws_instance']).property('count'). \
+            should_equal(2)
+        self.validator.resources(['aws_ebs_volume']).property('count'). \
+            should_equal(2)
 
 if __name__ == '__main__':
     SUITE = unittest.TestLoader().loadTestsFromTestCase(TestResources)

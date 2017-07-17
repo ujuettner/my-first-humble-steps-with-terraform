@@ -41,9 +41,26 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
+resource "aws_security_group" "allow_ssh" {
+  name        = "allow_ssh"
+  description = "Allow inbound SSH traffic."
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "Humblebee"
+  }
+}
+
 resource "aws_ebs_volume" "humblebee_volume" {
   count             = "${var.count}"
   availability_zone = "${element(data.aws_subnet.humblebee_subnet.*.availability_zone, count.index)}"
+  size              = 8
   encrypted         = true
   tags {
     Name = "Humblebee"
@@ -61,8 +78,9 @@ resource "aws_instance" "humblebee_instance" {
   count                       = "${var.count}"
   ami                         = "${data.aws_ami.amazon_linux.id}"
   instance_type               = "t2.micro"
-  associate_public_ip_address = false
   subnet_id                   = "${element(data.aws_subnet_ids.humblebee_subnet_ids.ids, count.index)}"
+  vpc_security_group_ids      = ["${aws_security_group.allow_ssh.id}"]
+  key_name                    = "${var.key_name}"
   tags {
     Name = "HumbleBee"
   }
