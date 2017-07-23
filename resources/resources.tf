@@ -70,8 +70,8 @@ resource "aws_ebs_volume" "humblebee_volume" {
 resource "aws_volume_attachment" "humblebee_attachment" {
   count       = "${var.count}"
   device_name = "/dev/sdz"
-  volume_id   = "${element(aws_ebs_volume.humblebee_volume.*.id, count.index)}"
-  instance_id = "${element(aws_instance.humblebee_instance.*.id, count.index)}"
+  volume_id   = "${aws_ebs_volume.humblebee_volume.*.id[count.index]}"
+  instance_id = "${aws_instance.humblebee_instance.*.id[count.index]}"
 }
 
 resource "aws_instance" "humblebee_instance" {
